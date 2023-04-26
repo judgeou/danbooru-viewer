@@ -23,6 +23,7 @@ const isRandom = ref(true)
 const random_startdate = ref('2015-01-01')
 const random_enddate = ref(dayjs().format('YYYY-MM-DD'))
 const rating = ref('Safe')
+const img_opacity = ref(10)
 
 async function search () {
   isLoading.value = true
@@ -81,6 +82,8 @@ async function copy_img_tags (post: IPost) {
       <input type="date" v-model="random_enddate" />
     </span>
 
+    <input type="number" v-model="img_opacity" min="0" max="10" />
+
   </div>
 
   <div style="margin-top: 8px;">
@@ -89,8 +92,12 @@ async function copy_img_tags (post: IPost) {
 
   <div class="img-container">
     <div v-for="post in posts" :key="post.id" class="img-item" @click="copy_img_tags(post)">
-      <img v-if="['png', 'jpg', 'gif'].indexOf(post.file_ext) >= 0" :src="post.large_file_url">
-      <video v-if="['mp4', 'webm'].indexOf(post.file_ext) >= 0" :src="post.large_file_url"></video>
+      <img v-if="['png', 'jpg', 'gif'].indexOf(post.file_ext) >= 0" 
+           :src="post.large_file_url"
+           :style="{ opacity: img_opacity / 10 }">
+      <video v-if="['mp4', 'webm'].indexOf(post.file_ext) >= 0" 
+           :src="post.large_file_url"
+           :style="{ opacity: img_opacity / 10 }"></video>
     </div>
   </div>
 </template>
