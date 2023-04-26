@@ -14,7 +14,7 @@ interface IPost {
   file_ext: string
 }
 
-const addition_tags = [ 'rating:General' ]
+const addition_tags = [] as string[]
 
 const tag_input = ref('')
 const posts = ref([] as IPost[])
@@ -22,10 +22,11 @@ const isLoading = ref(false)
 const isRandom = ref(true)
 const random_startdate = ref('2015-01-01')
 const random_enddate = ref(dayjs().format('YYYY-MM-DD'))
+const rating = ref('Safe')
 
 async function search () {
   isLoading.value = true
-  const tags = `${tag_input.value} ${addition_tags.join(' ')} ${get_random_tags()}`
+  const tags = `${tag_input.value} rating:${rating.value} ${addition_tags.join(' ')} ${get_random_tags()}`
   const res = await fetch(`https://danbooru.donmai.us/posts.json?limit=20&tags=${tags}`)
   posts.value = await res.json()
   isLoading.value = false
@@ -71,6 +72,10 @@ async function copy_img_tags (post: IPost) {
     <label>
       <input type="checkbox" v-model="isRandom"> random
     </label>
+    <select v-model="rating">
+      <option v-for="item in ['Safe', 'General', 'Sensitive', 'Questionable', 'Explicit']" :value="item">{{ item }}</option>      
+    </select>
+
     <span v-if="isRandom">
       <input type="date" v-model="random_startdate" />
       <input type="date" v-model="random_enddate" />
