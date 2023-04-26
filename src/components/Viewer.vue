@@ -10,7 +10,8 @@ interface IPost {
   image_width: number,
   tag_string_general: string,
   tag_string_copyright: string,
-  tag_string_character: string
+  tag_string_character: string,
+  file_ext: string
 }
 
 const addition_tags = [ 'rating:General' ]
@@ -83,16 +84,14 @@ async function copy_img_tags (post: IPost) {
 
   <div class="img-container">
     <div v-for="post in posts" :key="post.id" class="img-item" @click="copy_img_tags(post)">
-      <img :src="post.large_file_url">
-      <!-- <div>{{ post.tag_string_general }}</div>
-      <div>{{ post.tag_string_character }}</div>
-      <div>{{ post.tag_string_copyright }}</div> -->
+      <img v-if="['png', 'jpg', 'gif'].indexOf(post.file_ext) >= 0" :src="post.large_file_url">
+      <video v-if="['mp4', 'webm'].indexOf(post.file_ext) >= 0" :src="post.large_file_url"></video>
     </div>
   </div>
 </template>
 
 <style scoped>
-.img-container .img-item img {
+.img-container .img-item img, .img-container .img-item video {
   width: 250px;
   height: auto;
   display: block;
