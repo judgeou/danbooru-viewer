@@ -39,16 +39,13 @@ function get_random_tags () {
     const startDate = dayjs(random_startdate.value)
     const endDate = dayjs(random_enddate.value)
 
-    // 计算开始和结束日期之间的天数
-    const days = endDate.diff(startDate, 'day');
+    const months = endDate.diff(startDate, 'month');
+    const randomMonths = Math.floor(Math.random() * months);
+    const resultDate = startDate.add(randomMonths, 'month');
+    const resultDateStart = resultDate.startOf('month')
+    const resultDateEnd = resultDate.endOf('month')
 
-    // 随机选择一个天数
-    const randomDays = Math.floor(Math.random() * days);
-
-    // 创建新日期并添加随机天数
-    const resultDate = startDate.add(randomDays, 'day');
-
-    return `date:${resultDate.format('YYYY-MM-DD')} order:random`
+    return `date:>=${resultDateStart.format('YYYY-MM-DD')} date:<=${resultDateEnd.format('YYYY-MM-DD')} order:random`
   } else {
     return ''
   }
