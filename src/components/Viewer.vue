@@ -24,11 +24,12 @@ const random_startdate = ref('2015-01-01')
 const random_enddate = ref(dayjs().format('YYYY-MM-DD'))
 const rating = ref('Safe')
 const img_opacity = ref(10)
+const page = ref(1)
 
 async function search () {
   isLoading.value = true
   const tags = `${tag_input.value} rating:${rating.value} ${addition_tags.join(' ')} ${get_random_tags()}`
-  const res = await fetch(`https://danbooru.donmai.us/posts.json?limit=20&tags=${tags}`)
+  const res = await fetch(`https://danbooru.donmai.us/posts.json?limit=20&page=${page.value}&tags=${tags}`)
   posts.value = await res.json()
   isLoading.value = false
 }
@@ -80,6 +81,7 @@ async function copy_img_tags (post: IPost) {
     </span>
 
     <input type="number" v-model="img_opacity" min="0" max="10" />
+    <input type="number" v-model="page" min="0" max="100" placeholder="page">
 
   </div>
 
