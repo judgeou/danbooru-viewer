@@ -77,7 +77,8 @@ async function copy_img_tags (post: IPost) {
 
 async function trigger_complete () {
   if (tag_input.value.length >= 2) {
-    const res = await fetch(`https://danbooru.donmai.us/autocomplete.json?search%5Bquery%5D=${encodeURIComponent(tag_input.value)}&search%5Btype%5D=tag_query&version=1&limit=20`)
+    const input = tag_input.value.split(' ').pop() || ''
+    const res = await fetch(`https://danbooru.donmai.us/autocomplete.json?search%5Bquery%5D=${encodeURIComponent(input)}&search%5Btype%5D=tag_query&version=1&limit=20`)
     const items = await res.json() as ITagsCompleteItem[]
 
     tags_complete_items.value = items
@@ -87,7 +88,9 @@ async function trigger_complete () {
 }
 
 function input_complete (item: ITagsCompleteItem) {
-  tag_input.value = item.value
+  const tag_input_list = tag_input.value.split(' ')
+  tag_input_list[tag_input_list.length - 1] = item.value
+  tag_input.value = tag_input_list.join(' ')
   tags_complete_items.value = []
 }
 </script>
