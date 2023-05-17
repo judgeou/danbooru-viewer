@@ -11,6 +11,7 @@ interface IPost {
   tag_string_general: string,
   tag_string_copyright: string,
   tag_string_character: string,
+  tag_string_artist: string,
   file_ext: string
 }
 
@@ -97,6 +98,11 @@ async function copy_img_tags (post: IPost) {
       <video v-if="['mp4', 'webm'].indexOf(post.file_ext) >= 0" 
            :src="post.large_file_url"
            :style="{ opacity: img_opacity / 10 }"></video>
+
+      <div class="links">
+        <a target="_blank" :href="`https://danbooru.donmai.us/posts/${post.id}`">open</a>
+        <a target="_blank" :href="`https://danbooru.donmai.us/posts?tags=${encodeURIComponent(post.tag_string_artist)}`">artist</a>
+      </div>
     </div>
   </div>
 </template>
@@ -118,5 +124,8 @@ async function copy_img_tags (post: IPost) {
   flex-wrap: wrap;
   justify-content: center;
   margin-top: 12px;
+}
+.links a {
+  margin-right: 8px;
 }
 </style>
