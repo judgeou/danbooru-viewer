@@ -15,6 +15,15 @@ interface IPost {
   file_ext: string
 }
 
+interface ITagsCompleteItem {
+  antecedent?: string,
+  category: string,
+  label: string,
+  post_count: number,
+  type: string,
+  value: string
+}
+
 const addition_tags = [] as string[]
 
 const tag_input = ref('')
@@ -26,6 +35,7 @@ const random_enddate = ref(dayjs().format('YYYY-MM-DD'))
 const rating = ref('Safe')
 const img_opacity = ref(10)
 const page = ref(1)
+const tags_complete_items = ref([] as ITagsCompleteItem[])
 
 async function search () {
   isLoading.value = true
@@ -64,11 +74,27 @@ async function copy_img_tags (post: IPost) {
 
   alert(tags_copy.slice(0, 100) + '...')
 }
+
+async function trigger_complete () {
+  if (tag_input.value.length >= 2) {
+    const res = await fetch(`https://danbooru.donmai.us/autocomplete.json?search%5Bquery%5D=${encodeURIComponent(tag_input.value)}&search%5Btype%5D=tag_query&version=1&limit=20`)
+    const items = await res.json() as ITagsCompleteItem[]
+
+    tags_complete_items.value = items
+  } else {
+    tags_complete_items.value = []
+  }
+}
+
+function input_complete (item: ITagsCompleteItem) {
+  tag_input.value = item.value
+  tags_complete_items.value = []
+}
 </script>
 
 <template>
   <div>
-    <input type="text" placeholder="tags" v-model="tag_input" style="width: 300px;">
+    <input type="text" placeholder="tags" v-model="tag_input" style="width: 300px;" @input="trigger_complete">
     <label>
       <input type="checkbox" v-model="isRandom"> random
     </label>
@@ -84,6 +110,12 @@ async function copy_img_tags (post: IPost) {
     <input type="number" v-model="img_opacity" min="0" max="10" />
     <input type="number" v-model="page" min="0" max="100" placeholder="page">
 
+  </div>
+
+  <div v-if="tags_complete_items.length > 0" class="tags-complete">
+    <div v-for="item in tags_complete_items" class="tags-complete-item" @click="input_complete(item)">
+      <span v-if="item.antecedent">{{ item.antecedent }} -> </span>{{ item.label }}
+    </div>
   </div>
 
   <div style="margin-top: 8px;">
@@ -127,5 +159,17 @@ async function copy_img_tags (post: IPost) {
 }
 .links a {
   margin-right: 8px;
+}
+.tags-complete {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+}
+.tags-complete .tags-complete-item {
+  margin-right: 8px;
+  border: 1px solid #c7b2b2;
+  padding: 2px;
+  margin-bottom: 8px;
+  cursor: pointer;
 }
 </style>
