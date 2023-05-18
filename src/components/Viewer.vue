@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import dayjs from 'dayjs'
+import { nextTick, ref } from 'vue'
 
 interface IPost {
   id: number,
@@ -30,37 +29,22 @@ const tag_input = ref('')
 const posts = ref([] as IPost[])
 const isLoading = ref(false)
 const isRandom = ref(true)
-const random_startdate = ref('2015-01-01')
-const random_enddate = ref(dayjs().format('YYYY-MM-DD'))
+const randomMaxPage = ref(200)
 const rating = ref('Safe')
 const img_opacity = ref(10)
 const page = ref(1)
 const tags_complete_items = ref([] as ITagsCompleteItem[])
+const el_taginput = ref<HTMLInputElement>()
 
 async function search () {
   isLoading.value = true
-  const tags = `${tag_input.value} rating:${rating.value} ${addition_tags.join(' ')} ${get_random_tags()}`
+  if (isRandom.value) {
+    page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
+  }
+  const tags = `${tag_input.value} rating:${rating.value} ${addition_tags.join(' ')}`
   const res = await fetch(`https://danbooru.donmai.us/posts.json?limit=20&page=${page.value}&tags=${tags}`)
   posts.value = await res.json()
   isLoading.value = false
-}
-
-function get_random_tags () {
-  if (isRandom.value) {
-    // 定义开始和结束日期
-    const startDate = dayjs(random_startdate.value)
-    const endDate = dayjs(random_enddate.value)
-
-    const months = endDate.diff(startDate, 'month');
-    const randomMonths = Math.floor(Math.random() * months);
-    const resultDate = startDate.add(randomMonths, 'month');
-    const resultDateStart = resultDate.startOf('month')
-    const resultDateEnd = resultDate.endOf('month')
-
-    return `date:>=${resultDateStart.format('YYYY-MM-DD')} date:<=${resultDateEnd.format('YYYY-MM-DD')} order:random`
-  } else {
-    return ''
-  }
 }
 
 async function copy_img_tags (post: IPost) {
@@ -87,17 +71,20 @@ async function trigger_complete () {
   }
 }
 
-function input_complete (item: ITagsCompleteItem) {
+async function input_complete (item: ITagsCompleteItem) {
   const tag_input_list = tag_input.value.split(' ')
   tag_input_list[tag_input_list.length - 1] = item.value
-  tag_input.value = tag_input_list.join(' ')
+  tag_input.value = tag_input_list.join(' ') + ' '
   tags_complete_items.value = []
+
+  await nextTick()
+  el_taginput.value?.focus()
 }
 </script>
 
 <template>
   <div>
-    <input type="text" placeholder="tags" v-model="tag_input" style="width: 300px;" @input="trigger_complete">
+    <input ref="el_taginput" type="text" placeholder="tags" v-model="tag_input" style="width: 300px;" @input="trigger_complete">
     <label>
       <input type="checkbox" v-model="isRandom"> random
     </label>
@@ -106,8 +93,7 @@ function input_complete (item: ITagsCompleteItem) {
     </select>
 
     <span v-if="isRandom">
-      <input type="date" v-model="random_startdate" />
-      <input type="date" v-model="random_enddate" />
+      <input placeholder="randomMaxPage" type="number" v-model="randomMaxPage" min="1" max="1000" />
     </span>
 
     <input type="number" v-model="img_opacity" min="0" max="10" />
