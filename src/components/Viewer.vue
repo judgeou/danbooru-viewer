@@ -52,6 +52,8 @@ const img_opacity = ref(10)
 const page = ref(1)
 const tags_complete_items = ref([] as ITagsCompleteItem[])
 const el_taginput = ref<HTMLInputElement>()
+const img_src_queue = ref([] as IPost[])
+const img_src_loaded = ref([] as IPost[])
 
 const service = computed(() => service_list[service_selected.value])
 
@@ -63,7 +65,20 @@ async function search () {
   const tags = `${tag_input.value} rating:${rating.value} ${addition_tags.join(' ')}`
   const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
   posts.value = await res.json()
+  
+  img_src_queue.value = [...posts.value]
+  img_src_loaded.value = []
+  if (img_src_queue.value.length > 0) {
+    img_src_loaded.value.push(img_src_queue.value.pop()!)
+  }
+  
   isLoading.value = false
+}
+
+function load_next_img () {
+  if (img_src_queue.value.length > 0) {
+    img_src_loaded.value.push(img_src_queue.value.pop()!)
+  }
 }
 
 async function copy_img_tags (post: IPost) {
@@ -134,10 +149,11 @@ async function input_complete (item: ITagsCompleteItem) {
   </div>
 
   <div class="img-container">
-    <div v-for="post in posts" :key="post.id" class="img-item" @click="copy_img_tags(post)">
-      <img v-if="['png', 'jpg', 'gif'].indexOf(post.file_ext) >= 0" 
+    <div v-for="post in img_src_loaded" :key="post.id" class="img-item" @click="copy_img_tags(post)">
+      <img v-if="['png', 'jpg', 'gif'].indexOf(post.file_ext) >= 0"
            :src="(post as any)[service.sample_url_field]"
-           :style="{ opacity: img_opacity / 10 }">
+           :style="{ opacity: img_opacity / 10 }"
+           @load="load_next_img">
       <video v-if="['mp4', 'webm'].indexOf(post.file_ext) >= 0" 
            :src="post.large_file_url"
            :style="{ opacity: img_opacity / 10 }"></video>
