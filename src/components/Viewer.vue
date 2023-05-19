@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, computed } from 'vue'
 
 interface IPost {
   id: number,
@@ -23,8 +23,25 @@ interface ITagsCompleteItem {
   value: string
 }
 
+const service_list = [
+  {
+    name: 'danbooru',
+    host: 'danbooru.donmai.us',
+    post_path: 'posts.json',
+    open_path: 'posts',
+    sample_url_field: 'large_file_url'
+  }, {
+    name: 'yande',
+    host: 'yande.re',
+    post_path: 'post.json',
+    open_path: 'post/show',
+    sample_url_field: 'sample_url'
+  }
+]
+
 const addition_tags = [] as string[]
 
+const service_selected = ref(0)
 const tag_input = ref('')
 const posts = ref([] as IPost[])
 const isLoading = ref(false)
@@ -36,13 +53,15 @@ const page = ref(1)
 const tags_complete_items = ref([] as ITagsCompleteItem[])
 const el_taginput = ref<HTMLInputElement>()
 
+const service = computed(() => service_list[service_selected.value])
+
 async function search () {
   isLoading.value = true
   if (isRandom.value) {
     page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
   }
   const tags = `${tag_input.value} rating:${rating.value} ${addition_tags.join(' ')}`
-  const res = await fetch(`https://danbooru.donmai.us/posts.json?limit=20&page=${page.value}&tags=${tags}`)
+  const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
   posts.value = await res.json()
   isLoading.value = false
 }
@@ -84,6 +103,9 @@ async function input_complete (item: ITagsCompleteItem) {
 
 <template>
   <div>
+    <select v-model="service_selected">
+      <option v-for="(item, index) in service_list" :value="index">{{ item.name }}</option>
+    </select>
     <input ref="el_taginput" type="text" placeholder="tags" v-model="tag_input" style="width: 300px;" @input="trigger_complete">
     <label>
       <input type="checkbox" v-model="isRandom"> random
@@ -114,15 +136,15 @@ async function input_complete (item: ITagsCompleteItem) {
   <div class="img-container">
     <div v-for="post in posts" :key="post.id" class="img-item" @click="copy_img_tags(post)">
       <img v-if="['png', 'jpg', 'gif'].indexOf(post.file_ext) >= 0" 
-           :src="post.large_file_url"
+           :src="(post as any)[service.sample_url_field]"
            :style="{ opacity: img_opacity / 10 }">
       <video v-if="['mp4', 'webm'].indexOf(post.file_ext) >= 0" 
            :src="post.large_file_url"
            :style="{ opacity: img_opacity / 10 }"></video>
 
       <div class="links">
-        <a target="_blank" :href="`https://danbooru.donmai.us/posts/${post.id}`">open</a>
-        <a target="_blank" :href="`https://danbooru.donmai.us/posts?tags=${encodeURIComponent(post.tag_string_artist)}`">artist</a>
+        <a target="_blank" :href="`https://${service.host}/${service.open_path}/${post.id}`">open</a>
+        <a target="_blank" :href="`https://${service.host}/posts?tags=${encodeURIComponent(post.tag_string_artist)}`">artist</a>
       </div>
     </div>
   </div>
