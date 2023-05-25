@@ -66,7 +66,7 @@ async function search () {
   const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
   posts.value = await res.json()
   
-  img_src_queue.value = [...posts.value]
+  img_src_queue.value = [...posts.value].filter(item => (item as any)[service.value.sample_url_field])
   img_src_loaded.value = []
   if (img_src_queue.value.length > 0) {
     img_src_loaded.value.push(img_src_queue.value.pop()!)
