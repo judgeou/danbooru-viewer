@@ -153,10 +153,13 @@ async function input_complete (item: ITagsCompleteItem) {
       <img v-if="['png', 'jpg', 'gif'].indexOf(post.file_ext) >= 0"
            :src="(post as any)[service.sample_url_field]"
            :style="{ opacity: img_opacity / 10 }"
-           @load="load_next_img">
+           @load="load_next_img"
+           @error="load_next_img">
       <video v-if="['mp4', 'webm'].indexOf(post.file_ext) >= 0" 
            :src="post.large_file_url"
-           :style="{ opacity: img_opacity / 10 }"></video>
+           :style="{ opacity: img_opacity / 10 }"
+           @load="load_next_img"
+           @error="load_next_img"></video>
 
       <div class="links">
         <a target="_blank" :href="`https://${service.host}/${service.open_path}/${post.id}`">open</a>
