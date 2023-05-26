@@ -79,6 +79,9 @@ function load_next_img () {
   if (img_src_queue.value.length > 0) {
     img_src_loaded.value.push(img_src_queue.value.pop()!)
   }
+  if (img_src_queue.value.length > 0) {
+    img_src_loaded.value.push(img_src_queue.value.pop()!)
+  }
 }
 
 async function copy_img_tags (post: IPost) {
