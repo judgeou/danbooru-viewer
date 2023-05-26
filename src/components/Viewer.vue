@@ -62,8 +62,8 @@ async function search () {
   if (isRandom.value) {
     page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
   }
-  const rating_tagstr = rating.value.map(item => `rating:${item}`).join(' or ')
-  const tags = `${tag_input.value} ${rating_tagstr} ${addition_tags.join(' ')}`
+  const rating_tagstr = rating.value.join(',')
+  const tags = `${tag_input.value} rating:${rating_tagstr} ${addition_tags.join(' ')}`
   const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
   posts.value = await res.json()
   
