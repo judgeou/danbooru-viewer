@@ -47,7 +47,7 @@ const posts = ref([] as IPost[])
 const isLoading = ref(false)
 const isRandom = ref(true)
 const randomMaxPage = ref(200)
-const rating = ref('Safe')
+const rating = ref(['Safe'])
 const img_opacity = ref(10)
 const page = ref(1)
 const tags_complete_items = ref([] as ITagsCompleteItem[])
@@ -62,7 +62,8 @@ async function search () {
   if (isRandom.value) {
     page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
   }
-  const tags = `${tag_input.value} rating:${rating.value} ${addition_tags.join(' ')}`
+  const rating_tagstr = rating.value.map(item => `rating:${item}`).join(' or ')
+  const tags = `${tag_input.value} ${rating_tagstr} ${addition_tags.join(' ')}`
   const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
   posts.value = await res.json()
   
@@ -128,7 +129,7 @@ async function input_complete (item: ITagsCompleteItem) {
     <label>
       <input type="checkbox" v-model="isRandom"> random
     </label>
-    <select v-model="rating">
+    <select v-model="rating" multiple>
       <option v-for="item in ['Safe', 'General', 'Sensitive', 'Questionable', 'Explicit']" :value="item">{{ item }}</option>      
     </select>
 
