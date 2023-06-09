@@ -125,6 +125,10 @@ async function input_complete (item: ITagsCompleteItem) {
   await nextTick()
   el_taginput.value?.focus()
 }
+
+function open_site () {
+  window.open(`https://${service.value.host}/${service.value.open_path}?tags=${tag_input.value}`)
+}
 </script>
 
 <template>
@@ -132,7 +136,8 @@ async function input_complete (item: ITagsCompleteItem) {
     <select v-model="service_selected">
       <option v-for="(item, index) in service_list" :value="index">{{ item.name }}</option>
     </select>
-    <input ref="el_taginput" type="text" placeholder="tags" v-model="tag_input" style="width: 300px;" @input="trigger_complete">
+    <input ref="el_taginput" type="text" placeholder="tags" v-model="tag_input" style="width: 300px;"
+      @keydown.enter="open_site" @input="trigger_complete">
     <button @click="tag_input += ' order:random'">
       random
     </button>
