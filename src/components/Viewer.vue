@@ -45,9 +45,11 @@ const service_selected = ref(0)
 const tag_input = ref('')
 const posts = ref([] as IPost[])
 const isLoading = ref(false)
-const isRandom = ref(true)
+const isRandom = ref(false)
 const randomMaxPage = ref(200)
-const rating = ref(['Safe'])
+const rating = ref(['General', 'Sensitive'])
+const score = ref(90)
+const ageMonth = ref(12)
 const img_opacity = ref(10)
 const page = ref(1)
 const tags_complete_items = ref([] as ITagsCompleteItem[])
@@ -58,22 +60,27 @@ const img_src_loaded = ref([] as IPost[])
 const service = computed(() => service_list[service_selected.value])
 
 async function search () {
-  isLoading.value = true
-  if (isRandom.value) {
-    page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
+  try {
+    isLoading.value = true
+
+    if (isRandom.value) {
+      page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
+    }
+    const rating_tagstr = rating.value.join(',')
+    const tags = `${tag_input.value} rating:${rating_tagstr} ${addition_tags.join(' ')}`
+    const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
+    posts.value = await res.json()
+    
+    img_src_queue.value = [...posts.value].filter(item => (item as any)[service.value.sample_url_field])
+    img_src_loaded.value = []
+    if (img_src_queue.value.length > 0) {
+      img_src_loaded.value.push(img_src_queue.value.pop()!)
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    isLoading.value = false
   }
-  const rating_tagstr = rating.value.join(',')
-  const tags = `${tag_input.value} rating:${rating_tagstr} ${addition_tags.join(' ')}`
-  const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
-  posts.value = await res.json()
-  
-  img_src_queue.value = [...posts.value].filter(item => (item as any)[service.value.sample_url_field])
-  img_src_loaded.value = []
-  if (img_src_queue.value.length > 0) {
-    img_src_loaded.value.push(img_src_queue.value.pop()!)
-  }
-  
-  isLoading.value = false
 }
 
 function load_next_img () {
@@ -126,9 +133,9 @@ async function input_complete (item: ITagsCompleteItem) {
       <option v-for="(item, index) in service_list" :value="index">{{ item.name }}</option>
     </select>
     <input ref="el_taginput" type="text" placeholder="tags" v-model="tag_input" style="width: 300px;" @input="trigger_complete">
-    <label>
-      <input type="checkbox" v-model="isRandom"> random
-    </label>
+    <button @click="tag_input += ' order:random'">
+      random
+    </button>
     <select v-model="rating" multiple>
       <option v-for="item in ['Safe', 'General', 'Sensitive', 'Questionable', 'Explicit']" :value="item">{{ item }}</option>      
     </select>
@@ -137,8 +144,10 @@ async function input_complete (item: ITagsCompleteItem) {
       <input placeholder="randomMaxPage" type="number" v-model="randomMaxPage" min="1" max="1000" />
     </span>
 
-    <input type="number" v-model="img_opacity" min="0" max="10" />
-    <input type="number" v-model="page" min="0" max="100" placeholder="page">
+    age*:<input @keydown.enter="tag_input += ` age:<${ageMonth}month`" type="number" min="1" max="24" v-model="ageMonth" />
+    score*:<input @keydown.enter="tag_input += ` score:>${score}`" type="number" v-model="score" min="0" max="1000" placeholder="score">
+    page:<input type="number" v-model="page" min="0" max="100" placeholder="page">
+    opacity:<input type="number" v-model="img_opacity" min="0" max="10" />
 
   </div>
 
