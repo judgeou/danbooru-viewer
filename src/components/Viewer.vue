@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, computed, reactive } from 'vue'
+import { nextTick, ref, computed } from 'vue'
 
 interface IPost {
   id: number,
@@ -56,17 +56,31 @@ const tags_complete_items = ref([] as ITagsCompleteItem[])
 const el_taginput = ref<HTMLInputElement>()
 const img_src_queue = ref([] as IPost[])
 const img_src_loaded = ref([] as IPost[])
-const hasReadRange = reactive({
-  begin: Number.parseInt(localStorage.getItem('DANBOORU_VIEWER_HASREADRANGE_BEGIN') || '9999999'),
-  end: Number.parseInt(localStorage.getItem('DANBOORU_VIEWER_HASREADRANGE_END') || '0')
+const hasReadRange = ref({
+  'yande': { begin: 99999999, end: 0 },
+  'danbooru': { begin: 99999999, end: 0 }
 })
+
+{
+  const jsonstr = localStorage.getItem('DANBOORU_VIEWER_HASREADRANGE')
+  if (jsonstr) {
+    hasReadRange.value = JSON.parse(jsonstr)
+  }
+}
 
 const service = computed(() => service_list[service_selected.value])
 
+const current_id_range = computed(() => {
+  const range = (hasReadRange.value as any)[service.value.name]
+
+  return range as (typeof hasReadRange.value.danbooru)
+})
+
 const id_range_tag = computed(() => {
   if (tag_input.value === '') {
-    if (hasReadRange.begin > 0 && hasReadRange.end > 0) {
-      return `id:>${hasReadRange.end} id:<${hasReadRange.begin}`
+    const range = current_id_range.value
+    if (range.begin > 0 && range.end > 0) {
+      return `id:>${range.end} id:<${range.begin}`
     }
   } 
   
@@ -99,10 +113,12 @@ async function search () {
         return post.id < min.id ? post : min
       }).id
 
-      if (minid < hasReadRange.begin) hasReadRange.begin = minid
-      if (maxid > hasReadRange.end) hasReadRange.end = maxid
-      localStorage.setItem('DANBOORU_VIEWER_HASREADRANGE_BEGIN', hasReadRange.begin.toString())
-      localStorage.setItem('DANBOORU_VIEWER_HASREADRANGE_END', hasReadRange.end.toString())
+      const range = current_id_range.value
+
+      if (minid < range.begin) range.begin = minid
+      if (maxid > range.end) range.end = maxid
+      
+      localStorage.setItem('DANBOORU_VIEWER_HASREADRANGE', JSON.stringify(hasReadRange.value))
     }
   } catch (e) {
     console.error(e)
@@ -159,8 +175,14 @@ function open_site () {
 }
 
 function reset_id_range () {
-  hasReadRange.begin = 9999999
-  hasReadRange.end = 0
+  hasReadRange.value.danbooru = {
+    begin: 99999999,
+    end: 0
+  }
+  hasReadRange.value.yande = {
+    begin: 99999999,
+    end: 0
+  }
 }
 </script>
 
@@ -187,7 +209,7 @@ function reset_id_range () {
     page:<input type="number" v-model="page" min="0" max="100" placeholder="page">
     opacity:<input type="number" v-model="img_opacity" min="0" max="10" />
 
-    <button @click="reset_id_range">reset id range ({{ hasReadRange.begin }}~{{ hasReadRange.end }})</button>
+    <button @click="reset_id_range">reset id range ({{ current_id_range.begin }}~{{ current_id_range.end }})</button>
 
   </div>
 
