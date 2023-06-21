@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, computed } from 'vue'
+import { nextTick, ref, computed, reactive } from 'vue'
 
 interface IPost {
   id: number,
@@ -56,8 +56,22 @@ const tags_complete_items = ref([] as ITagsCompleteItem[])
 const el_taginput = ref<HTMLInputElement>()
 const img_src_queue = ref([] as IPost[])
 const img_src_loaded = ref([] as IPost[])
+const hasReadRange = reactive({
+  begin: Number.parseInt(localStorage.getItem('DANBOORU_VIEWER_HASREADRANGE_BEGIN') || '9999999'),
+  end: Number.parseInt(localStorage.getItem('DANBOORU_VIEWER_HASREADRANGE_END') || '0')
+})
 
 const service = computed(() => service_list[service_selected.value])
+
+const id_range_tag = computed(() => {
+  if (tag_input.value === '') {
+    if (hasReadRange.begin > 0 && hasReadRange.end > 0) {
+      return `id:>${hasReadRange.end} id:<${hasReadRange.begin}`
+    }
+  } 
+  
+  return ''
+})
 
 async function search () {
   try {
@@ -67,7 +81,7 @@ async function search () {
       page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
     }
     const rating_tagstr = rating.value.join(',')
-    const tags = `${tag_input.value} rating:${rating_tagstr} ${addition_tags.join(' ')}`
+    const tags = `${tag_input.value} rating:${rating_tagstr} ${addition_tags.join(' ')} ${id_range_tag.value}`
     const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
     posts.value = await res.json()
     
@@ -75,6 +89,20 @@ async function search () {
     img_src_loaded.value = []
     if (img_src_queue.value.length > 0) {
       img_src_loaded.value.push(img_src_queue.value.pop()!)
+    }
+
+    if (tag_input.value === '') {
+      const maxid = posts.value.reduce((max, post) => {
+        return post.id > max.id ? post : max
+      }).id
+      const minid = posts.value.reduce((min, post) => {
+        return post.id < min.id ? post : min
+      }).id
+
+      if (minid < hasReadRange.begin) hasReadRange.begin = minid
+      if (maxid > hasReadRange.end) hasReadRange.end = maxid
+      localStorage.setItem('DANBOORU_VIEWER_HASREADRANGE_BEGIN', hasReadRange.begin.toString())
+      localStorage.setItem('DANBOORU_VIEWER_HASREADRANGE_END', hasReadRange.end.toString())
     }
   } catch (e) {
     console.error(e)
@@ -129,6 +157,11 @@ async function input_complete (item: ITagsCompleteItem) {
 function open_site () {
   window.open(`https://${service.value.host}/${service.value.open_path}?tags=${tag_input.value}`)
 }
+
+function reset_id_range () {
+  hasReadRange.begin = 9999999
+  hasReadRange.end = 0
+}
 </script>
 
 <template>
@@ -153,6 +186,8 @@ function open_site () {
     score*:<input @keydown.enter="tag_input += ` score:>${score}`" type="number" v-model="score" min="0" max="1000" placeholder="score">
     page:<input type="number" v-model="page" min="0" max="100" placeholder="page">
     opacity:<input type="number" v-model="img_opacity" min="0" max="10" />
+
+    <button @click="reset_id_range">reset id range ({{ hasReadRange.begin }}~{{ hasReadRange.end }})</button>
 
   </div>
 
