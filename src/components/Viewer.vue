@@ -79,15 +79,26 @@ const current_id_range = computed(() => {
 const id_range_tag = computed(() => {
   if (tag_input.value === '') {
     const range = current_id_range.value
-    if (range.begin > 0 && range.end > 0) {
-      return `id:>${range.end} id:<${range.begin}`
+    if (range.begin > 0) {
+      return `id:<${range.begin}`
     }
   } 
   
   return ''
 })
 
-async function search () {
+const id_range_tag_newest = computed(() => {
+  if (tag_input.value === '') {
+    const range = current_id_range.value
+    if (range.end > 0) {
+      return `id:>${range.end}`
+    }
+  } 
+  
+  return ''
+})
+
+async function search (is_newest = false) {
   try {
     isLoading.value = true
 
@@ -95,7 +106,7 @@ async function search () {
       page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
     }
     const rating_tagstr = rating.value.join(',')
-    const tags = `${tag_input.value} rating:${rating_tagstr} ${addition_tags.join(' ')} ${id_range_tag.value}`
+    const tags = `${tag_input.value} rating:${rating_tagstr} ${addition_tags.join(' ')} ${is_newest ? id_range_tag_newest.value : id_range_tag.value}`
     const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
     posts.value = await res.json()
     
@@ -220,7 +231,8 @@ function reset_id_range () {
   </div>
 
   <div style="margin-top: 8px;">
-    <button :disabled="isLoading" @click="search" style="height: 30px;">Search</button>
+    <button :disabled="isLoading" @click="search(false)" style="height: 30px;">Search</button>
+    <button :disabled="isLoading" @click="search(true)" style="height: 30px;">Newest</button>
   </div>
 
   <div class="img-container">
