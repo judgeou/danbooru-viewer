@@ -78,7 +78,7 @@ const current_id_range = computed(() => {
 })
 
 const id_range_tag = computed(() => {
-  if (tag_input.value === '') {
+  if (use_id_range) {
     const range = current_id_range.value
     if (range.begin > 0) {
       return `id:<${range.begin}`
@@ -89,7 +89,7 @@ const id_range_tag = computed(() => {
 })
 
 const id_range_tag_newest = computed(() => {
-  if (tag_input.value === '') {
+  if (use_id_range) {
     const range = current_id_range.value
     if (range.end > 0) {
       return `id:>${range.end}`
