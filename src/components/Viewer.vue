@@ -60,6 +60,7 @@ const hasReadRange = ref({
   'yande': { begin: 99999999, end: 0 },
   'danbooru': { begin: 99999999, end: 0 }
 })
+const use_id_range = ref(true)
 
 {
   const jsonstr = localStorage.getItem('DANBOORU_VIEWER_HASREADRANGE')
@@ -116,7 +117,7 @@ async function search (is_newest = false) {
       img_src_loaded.value.push(img_src_queue.value.pop()!)
     }
 
-    if (tag_input.value === '') {
+    if (use_id_range.value) {
       const maxid = posts.value.reduce((max, post) => {
         return post.id > max.id ? post : max
       }).id
@@ -221,6 +222,7 @@ function reset_id_range () {
     opacity:<input type="number" v-model="img_opacity" min="0" max="10" />
 
     <button @click="reset_id_range">reset id range ({{ current_id_range.begin }}~{{ current_id_range.end }})</button>
+    <input type="checkbox" v-model="use_id_range">
 
   </div>
 
