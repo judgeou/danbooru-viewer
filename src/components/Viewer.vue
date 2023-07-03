@@ -209,7 +209,7 @@ function reset_id_range () {
       random
     </button>
     <select v-model="rating" multiple>
-      <option v-for="item in ['Safe', 'General', 'Sensitive', 'Questionable', 'Explicit']" :value="item">{{ item }}</option>      
+      <option v-for="item in ['Safe', 'General', 'Sensitive', 'Questionable', 'Explicit', 'q', 'e']" :value="item">{{ item }}</option>      
     </select>
 
     <span v-if="isRandom">
