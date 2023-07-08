@@ -99,6 +99,14 @@ const id_range_tag_newest = computed(() => {
   return ''
 })
 
+function get_tagstr () {
+  if (rating.value.length > 0 && rating.value[0] === 'None') {
+    return ''
+  } else {
+    return 'rating:' + rating.value.join(',')
+  }
+}
+
 async function search (is_newest = false) {
   try {
     isLoading.value = true
@@ -106,8 +114,8 @@ async function search (is_newest = false) {
     if (isRandom.value) {
       page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
     }
-    const rating_tagstr = rating.value.join(',')
-    const tags = `${tag_input.value} rating:${rating_tagstr} ${addition_tags.join(' ')} ${is_newest ? id_range_tag_newest.value : id_range_tag.value}`
+    const rating_tagstr = get_tagstr()
+    const tags = `${tag_input.value} ${rating_tagstr} ${addition_tags.join(' ')} ${is_newest ? id_range_tag_newest.value : id_range_tag.value}`
     const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
     posts.value = await res.json()
     
@@ -209,7 +217,7 @@ function reset_id_range () {
       random
     </button>
     <select v-model="rating" multiple>
-      <option v-for="item in ['Safe', 'General', 'Sensitive', 'Questionable', 'Explicit', 'q', 'e']" :value="item">{{ item }}</option>      
+      <option v-for="item in ['None', 'Safe', 'General', 'Sensitive', 'Questionable', 'Explicit', 'q', 'e']" :value="item">{{ item }}</option>      
     </select>
 
     <span v-if="isRandom">
