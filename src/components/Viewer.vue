@@ -60,6 +60,7 @@ const hasReadRange = ref({
   'yande': { begin: 99999999, end: 0 },
   'danbooru': { begin: 99999999, end: 0 }
 })
+const use_id_range = ref(true)
 
 {
   const jsonstr = localStorage.getItem('DANBOORU_VIEWER_HASREADRANGE')
@@ -77,7 +78,7 @@ const current_id_range = computed(() => {
 })
 
 const id_range_tag = computed(() => {
-  if (tag_input.value === '') {
+  if (use_id_range) {
     const range = current_id_range.value
     if (range.begin > 0) {
       return `id:<${range.begin}`
@@ -88,7 +89,7 @@ const id_range_tag = computed(() => {
 })
 
 const id_range_tag_newest = computed(() => {
-  if (tag_input.value === '') {
+  if (use_id_range) {
     const range = current_id_range.value
     if (range.end > 0) {
       return `id:>${range.end}`
@@ -98,6 +99,14 @@ const id_range_tag_newest = computed(() => {
   return ''
 })
 
+function get_tagstr () {
+  if (rating.value.length > 0 && rating.value[0] === 'None') {
+    return ''
+  } else {
+    return 'rating:' + rating.value.join(',')
+  }
+}
+
 async function search (is_newest = false) {
   try {
     isLoading.value = true
@@ -105,8 +114,8 @@ async function search (is_newest = false) {
     if (isRandom.value) {
       page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
     }
-    const rating_tagstr = rating.value.join(',')
-    const tags = `${tag_input.value} rating:${rating_tagstr} ${addition_tags.join(' ')} ${is_newest ? id_range_tag_newest.value : id_range_tag.value}`
+    const rating_tagstr = get_tagstr()
+    const tags = `${tag_input.value} ${rating_tagstr} ${addition_tags.join(' ')} ${is_newest ? id_range_tag_newest.value : id_range_tag.value}`
     const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
     posts.value = await res.json()
     
@@ -116,7 +125,7 @@ async function search (is_newest = false) {
       img_src_loaded.value.push(img_src_queue.value.pop()!)
     }
 
-    if (tag_input.value === '') {
+    if (use_id_range.value) {
       const maxid = posts.value.reduce((max, post) => {
         return post.id > max.id ? post : max
       }).id
@@ -208,7 +217,7 @@ function reset_id_range () {
       random
     </button>
     <select v-model="rating" multiple>
-      <option v-for="item in ['Safe', 'General', 'Sensitive', 'Questionable', 'Explicit']" :value="item">{{ item }}</option>      
+      <option v-for="item in ['None', 'Safe', 'General', 'Sensitive', 'Questionable', 'Explicit', 'q', 'e']" :value="item">{{ item }}</option>      
     </select>
 
     <span v-if="isRandom">
@@ -221,6 +230,7 @@ function reset_id_range () {
     opacity:<input type="number" v-model="img_opacity" min="0" max="10" />
 
     <button @click="reset_id_range">reset id range ({{ current_id_range.begin }}~{{ current_id_range.end }})</button>
+    <input type="checkbox" v-model="use_id_range">
 
   </div>
 
