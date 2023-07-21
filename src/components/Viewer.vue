@@ -41,13 +41,12 @@ const service_list = [
 
 const addition_tags = [] as string[]
 
-const service_selected = ref(0)
+const service_selected = ref(1)
 const tag_input = ref('')
 const posts = ref([] as IPost[])
 const isLoading = ref(false)
-const isRandom = ref(false)
-const randomMaxPage = ref(200)
-const rating = ref(['General', 'Sensitive'])
+
+const rating = ref(['None'])
 const score = ref(90)
 const ageMonth = ref(12)
 const img_opacity = ref(10)
@@ -56,48 +55,19 @@ const tags_complete_items = ref([] as ITagsCompleteItem[])
 const el_taginput = ref<HTMLInputElement>()
 const img_src_queue = ref([] as IPost[])
 const img_src_loaded = ref([] as IPost[])
-const hasReadRange = ref({
-  'yande': { begin: 99999999, end: 0 },
-  'danbooru': { begin: 99999999, end: 0 }
-})
-const use_id_range = ref(true)
 
-{
-  const jsonstr = localStorage.getItem('DANBOORU_VIEWER_HASREADRANGE')
-  if (jsonstr) {
-    hasReadRange.value = JSON.parse(jsonstr)
-  }
-}
+const use_random = ref(true)
+const maxid = ref(Number(localStorage.getItem("DANBOORU_VIEWER_MAXID") || 1106731))
 
 const service = computed(() => service_list[service_selected.value])
 
-const current_id_range = computed(() => {
-  const range = (hasReadRange.value as any)[service.value.name]
-
-  return range as (typeof hasReadRange.value.danbooru)
-})
-
-const id_range_tag = computed(() => {
-  if (use_id_range) {
-    const range = current_id_range.value
-    if (range.begin > 0) {
-      return `id:<${range.begin}`
-    }
-  } 
-  
+function id_range_tag () {
   return ''
-})
+}
 
-const id_range_tag_newest = computed(() => {
-  if (use_id_range) {
-    const range = current_id_range.value
-    if (range.end > 0) {
-      return `id:>${range.end}`
-    }
-  } 
-  
-  return ''
-})
+function getRandomInt (min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 function get_tagstr () {
   if (rating.value.length > 0 && rating.value[0] === 'None') {
@@ -111,34 +81,16 @@ async function search (is_newest = false) {
   try {
     isLoading.value = true
 
-    if (isRandom.value) {
-      page.value = Math.floor(Math.random() * randomMaxPage.value) + 1
-    }
     const rating_tagstr = get_tagstr()
-    const tags = `${tag_input.value} ${rating_tagstr} ${addition_tags.join(' ')} ${is_newest ? id_range_tag_newest.value : id_range_tag.value}`
-    const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${page.value}&tags=${tags}`)
+    const tags = `${tag_input.value} ${rating_tagstr} ${addition_tags.join(' ')} ${is_newest ? '' : id_range_tag()}`
+    const pageIndex = is_newest ? page.value : getRandomInt(1, 30000)
+    const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${pageIndex}&tags=${tags}`)
     posts.value = await res.json()
     
     img_src_queue.value = [...posts.value].filter(item => (item as any)[service.value.sample_url_field])
     img_src_loaded.value = []
     if (img_src_queue.value.length > 0) {
       img_src_loaded.value.push(img_src_queue.value.pop()!)
-    }
-
-    if (use_id_range.value) {
-      const maxid = posts.value.reduce((max, post) => {
-        return post.id > max.id ? post : max
-      }).id
-      const minid = posts.value.reduce((min, post) => {
-        return post.id < min.id ? post : min
-      }).id
-
-      const range = current_id_range.value
-
-      if (minid < range.begin) range.begin = minid
-      if (maxid > range.end) range.end = maxid
-      
-      localStorage.setItem('DANBOORU_VIEWER_HASREADRANGE', JSON.stringify(hasReadRange.value))
     }
   } catch (e) {
     console.error(e)
@@ -194,15 +146,8 @@ function open_site () {
   window.open(`https://${service.value.host}/${service.value.open_path}?tags=${tag_input.value}`)
 }
 
-function reset_id_range () {
-  hasReadRange.value.danbooru = {
-    begin: 99999999,
-    end: 0
-  }
-  hasReadRange.value.yande = {
-    begin: 99999999,
-    end: 0
-  }
+function save_maxid () {
+  localStorage.setItem("DANBOORU_VIEWER_MAXID", maxid.value.toString())
 }
 </script>
 
@@ -220,17 +165,13 @@ function reset_id_range () {
       <option v-for="item in ['None', 'Safe', 'General', 'Sensitive', 'Questionable', 'Explicit', 'q', 'e']" :value="item">{{ item }}</option>      
     </select>
 
-    <span v-if="isRandom">
-      <input placeholder="randomMaxPage" type="number" v-model="randomMaxPage" min="1" max="1000" />
-    </span>
-
     age*:<input @keydown.enter="tag_input += ` age:<${ageMonth}month`" type="number" min="1" max="24" v-model="ageMonth" />
     score*:<input @keydown.enter="tag_input += ` score:>${score}`" type="number" v-model="score" min="0" max="1000" placeholder="score">
     page:<input type="number" v-model="page" min="0" max="100" placeholder="page">
     opacity:<input type="number" v-model="img_opacity" min="0" max="10" />
 
-    <button @click="reset_id_range">reset id range ({{ current_id_range.begin }}~{{ current_id_range.end }})</button>
-    <input type="checkbox" v-model="use_id_range">
+    <input type="text" v-model="maxid" @keydown.enter="save_maxid" />
+    <input type="checkbox" v-model="use_random">
 
   </div>
 
