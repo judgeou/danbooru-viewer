@@ -57,7 +57,7 @@ const img_src_queue = ref([] as IPost[])
 const img_src_loaded = ref([] as IPost[])
 
 const use_random = ref(true)
-const maxid = ref(Number(localStorage.getItem("DANBOORU_VIEWER_MAXID") || 1106731))
+const maxid = ref(Number(localStorage.getItem("DANBOORU_VIEWER_MAXID") || 6000))
 
 const service = computed(() => service_list[service_selected.value])
 
@@ -83,7 +83,7 @@ async function search (is_newest = false) {
 
     const rating_tagstr = get_tagstr()
     const tags = `${tag_input.value} ${rating_tagstr} ${addition_tags.join(' ')} ${is_newest ? '' : id_range_tag()}`
-    const pageIndex = is_newest ? page.value : getRandomInt(1, 30000)
+    const pageIndex = is_newest ? page.value : getRandomInt(1, maxid.value)
     const res = await fetch(`https://${service.value.host}/${service.value.post_path}?limit=20&page=${pageIndex}&tags=${tags}`)
     posts.value = await res.json()
     
